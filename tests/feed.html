@@ -1,0 +1,57 @@
+<!doctype html>
+<!-- A stand-in for TikTok's For You feed, built like the real one (2026-10): an <article> per
+     video, each with its own <video>; ▲ ▼ buttons with data-e2e="feed-navigation-prev/next";
+     the video in view plays, the others pause; a hidden tab pauses. Like TikTok, buttons and
+     arrow keys only react to real input (isTrusted). window.feed lets tests look inside. -->
+<html><head><meta charset="utf-8"><title>Feed</title>
+<style>
+  html, body { margin: 0; background: #000; height: 100%; overflow: hidden; }
+  #column-list-container { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; }
+  article { height: 100vh; scroll-snap-align: start; display: flex; align-items: center; justify-content: center; }
+  video { height: 90vh; aspect-ratio: 9 / 16; }
+  nav { position: fixed; right: 20px; top: 40%; display: flex; flex-direction: column; gap: 10px; }
+  nav button { width: 40px; height: 40px; border-radius: 50%; }
+</style></head>
+<body>
+<main><div id="column-list-container"></div></main>
+<nav><button data-e2e="feed-navigation-prev">▲</button><button data-e2e="feed-navigation-next">▼</button></nav>
+<script>
+const COLORS = ['red', 'green', 'blue', 'yellow'];
+const list = document.getElementById('column-list-container');
+const feed = window.feed = {index: 0, log: [], videos: []};
+for (const c of COLORS) {
+    const article = document.createElement('article');
+    article.dataset.e2e = 'recommend-list-item-container';
+    const v = document.createElement('video');
+    v.src = `${c}.webm`;
+    v.loop = true;
+    v.preload = 'auto';
+    article.append(v);
+    list.append(article);
+    feed.videos.push(v);
+}
+function go(i) {
+    i = Math.max(0, Math.min(COLORS.length - 1, i));
+    feed.index = i;
+    list.children[i].scrollIntoView({block: 'start'});
+    feed.videos.forEach((v, j) => j === i ? v.play() : v.pause());
+    feed.log.push(`go ${i}`);
+}
+for (const [dir, d] of [['prev', -1], ['next', 1]])
+    document.querySelector(`[data-e2e=feed-navigation-${dir}]`).addEventListener('click', e => {
+        if (!e.isTrusted) return feed.log.push(`untrusted click ${dir}`);
+        go(feed.index + d);
+    });
+document.addEventListener('keydown', e => {
+    if (!e.isTrusted || !['ArrowDown', 'ArrowUp'].includes(e.key)) return;
+    e.preventDefault();
+    go(feed.index + (e.key === 'ArrowDown' ? 1 : -1));
+});
+document.addEventListener('visibilitychange', () => {
+    feed.log.push(`visibility ${document.visibilityState}`);
+    if (document.hidden) feed.videos[feed.index].pause();
+    else feed.videos[feed.index].play();
+});
+go(0);
+</script>
+</body></html>

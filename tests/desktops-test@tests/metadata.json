@@ -1,0 +1,1 @@
+{"uuid": "desktops-test@tests", "name": "TikTok PiP desktops test", "description": "Test driver for tests/desktops.sh", "shell-version": ["48", "49", "50", "51"]}

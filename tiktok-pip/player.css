@@ -1,0 +1,29 @@
+/* ▲ ▼ on the right edge of a TikTok picture-in-picture window. They fade in and out with
+   Firefox's own controls (.control-item) and look like its close/back-to-tab buttons. */
+.tiktok-pip-nav {
+  display: none;
+  position: absolute;
+  right: 10px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.8);
+  fill: var(--close-btn-fill-color);
+  background-size: 55%;
+}
+
+:root[tiktok] .tiktok-pip-nav {
+  display: block;
+}
+
+.tiktok-pip-nav:is(:hover, :focus-visible) {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+#tiktok-prev {
+  top: calc(50% - var(--player-control-item-height) - 4px);
+  background-image: url("chrome://global/skin/icons/arrow-up.svg");
+}
+
+#tiktok-next {
+  top: calc(50% + 4px);
+  background-image: url("chrome://global/skin/icons/arrow-down.svg");
+}
