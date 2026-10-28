@@ -1,7 +1,7 @@
 // Minimal WebDriver BiDi driver for a throwaway headless Firefox (no extra packages needed),
 // adapted from gnome-veil's tests. chrome() runs code in Firefox's own windows.
 import {spawn} from 'node:child_process';
-import {mkdtempSync, writeFileSync} from 'node:fs';
+import {mkdtempSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 
@@ -39,15 +39,25 @@ export function profile(prefs = {}) {
 export const args = (dir, port) => ['--no-remote', '--profile', dir, `--remote-debugging-port=${port}`,
     '-remote-allow-system-access'];
 
-export async function start({binary = 'firefox', port = 9600 + Math.floor(Math.random() * 400), headless = true, prefs = {}, env = {}} = {}) {
-    const a = args(profile(prefs), port);
+export async function start({binary = 'firefox', port = 9600 + Math.floor(Math.random() * 400), headless = true, prefs = {}, env = {}, dir = null} = {}) {
+    // A profile made here is deleted again by quit().
+    const own = !dir;
+    dir ??= profile(prefs);
+    const a = args(dir, port);
     if (headless)
         a.unshift('--headless');
     const proc = spawn(binary, a, {stdio: ['ignore', 'pipe', 'pipe'], env: {...process.env, ...env}});
     let stderr = '';
     proc.stderr.on('data', d => { stderr += d; });
     proc.stdout.on('data', d => { stderr += d; });
-    return connect(port, proc, () => stderr);
+    const ff = await connect(port, proc, () => stderr);
+    const quit = ff.quit;
+    ff.quit = async () => {
+        await quit.call(ff);
+        if (own)
+            rmSync(dir, {recursive: true, force: true});
+    };
+    return ff;
 }
 
 // Talks to a Firefox already listening on port (started by start() or someone else).

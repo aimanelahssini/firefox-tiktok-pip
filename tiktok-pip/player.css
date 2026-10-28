@@ -1,5 +1,31 @@
-/* ▲ ▼ on the right edge of a TikTok picture-in-picture window. They fade in and out with
-   Firefox's own controls (.control-item) and look like its close/back-to-tab buttons. */
+/* A TikTok picture-in-picture window (main.sys.mjs sets [tiktok] on it):
+   - Firefox's controls and the ▲ ▼ buttons only show after a click ([tiktok-controls]), not on
+     hover, and never show tooltips;
+   - a thin grey bar along the bottom fills up in red as the video plays, as on TikTok. */
+
+/* Until the window knows where its video comes from (a moment after it opens), nothing shows. */
+:root:not([source-known]) .control-item,
+:root[tiktok]:not([tiktok-controls]) .control-item {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+:root[tiktok][tiktok-controls] .control-item:not([hidden]) {
+  opacity: 1 !important;
+}
+
+:root[tiktok][tiktok-controls] #controls-bottom-gradient {
+  opacity: 0.8 !important;
+}
+
+:root[tiktok][tiktok-controls] #controls {
+  cursor: default !important;
+}
+
+:root[tiktok] .control-item::after {
+  display: none !important;
+}
+
 .tiktok-pip-nav {
   display: none;
   position: absolute;
@@ -26,4 +52,31 @@
 #tiktok-next {
   top: calc(50% + 4px);
   background-image: url("chrome://global/skin/icons/arrow-down.svg");
+}
+
+#tiktok-progress {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+:root[tiktok] #tiktok-progress {
+  display: block;
+}
+
+#tiktok-progress > div {
+  height: 100%;
+  width: 0;
+  background: #fe2c55;
+  /* The position comes about 4 times a second: slide between them. */
+  transition: width 260ms linear;
+}
+
+#tiktok-progress > div.jump {
+  transition: none;
 }

@@ -2,7 +2,9 @@
 <!-- A stand-in for TikTok's For You feed, built like the real one (2026-10): an <article> per
      video, each with its own <video>; ▲ ▼ buttons with data-e2e="feed-navigation-prev/next";
      the video in view plays, the others pause; a hidden tab pauses. Like TikTok, buttons and
-     arrow keys only react to real input (isTrusted). window.feed lets tests look inside. -->
+     arrow keys only react to real input (isTrusted), and it moves on in an animation frame, so not
+     while its tab sleeps. Like TikTok, it also plays a video nobody sees (a LIVE preview).
+     window.feed lets tests look inside. -->
 <html><head><meta charset="utf-8"><title>Feed</title>
 <style>
   html, body { margin: 0; background: #000; height: 100%; overflow: hidden; }
@@ -19,8 +21,9 @@
 const COLORS = ['red', 'green', 'blue', 'yellow'];
 const list = document.getElementById('column-list-container');
 const feed = window.feed = {index: 0, log: [], videos: []};
-for (const c of COLORS) {
+for (const [i, c] of COLORS.entries()) {
     const article = document.createElement('article');
+    article.id = `one-column-item-${i}`;
     article.dataset.e2e = 'recommend-list-item-container';
     const v = document.createElement('video');
     v.src = `${c}.webm`;
@@ -30,7 +33,16 @@ for (const c of COLORS) {
     list.append(article);
     feed.videos.push(v);
 }
+const hiddenPreview = document.createElement('video');
+hiddenPreview.src = 'yellow.webm';
+hiddenPreview.loop = hiddenPreview.muted = true;
+hiddenPreview.style = 'position: fixed; left: -500px; top: 0; width: 200px';
+document.body.append(hiddenPreview);
+hiddenPreview.play();
 function go(i) {
+    requestAnimationFrame(() => show(i));
+}
+function show(i) {
     i = Math.max(0, Math.min(COLORS.length - 1, i));
     feed.index = i;
     list.children[i].scrollIntoView({block: 'start'});
@@ -52,6 +64,6 @@ document.addEventListener('visibilitychange', () => {
     if (document.hidden) feed.videos[feed.index].pause();
     else feed.videos[feed.index].play();
 });
-go(0);
+show(0);
 </script>
 </body></html>

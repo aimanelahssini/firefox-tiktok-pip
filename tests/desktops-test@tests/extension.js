@@ -2,7 +2,9 @@
 // commands desktops.mjs writes to $TT_OUT/cmd ("<id> <command>"), answering in $TT_OUT/ack-<id>.
 //   desk N    switch to desktop N
 //   cover     a maximized window on top of Firefox; uncover closes it
-//   info      the PiP windows: on all desktops? on top? animated when they appeared?
+//   minimize  minimizes Firefox; unminimize brings it back
+//   place X Y W H   moves/resizes the PiP window, as if dragged there (PiP Everywhere remembers it)
+//   info      the PiP windows: on all desktops? on top? animated when they appeared? where?
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -19,6 +21,7 @@ const read = name => {
 };
 const windows = () => global.get_window_actors().map(a => a.meta_window);
 const isPip = w => /^picture-in-picture$/i.test(w.get_title() ?? '');
+const firefox = () => windows().find(w => /firefox/i.test(w.get_wm_class() ?? '') && !isPip(w));
 
 export default class DesktopsTest extends Extension {
     enable() {
@@ -28,9 +31,10 @@ export default class DesktopsTest extends Extension {
         // Is the window still animating 60 ms after it appeared? (GNOME's zoom-in starts small
         // and see-through, and takes longer than that.)
         global.window_manager.connect('map', (wm, actor) => {
+            // Every window: a PiP's title can arrive after it appears.
             GLib.timeout_add(GLib.PRIORITY_DEFAULT, 60, () => {
                 const w = actor.meta_window;
-                if (w && isPip(w))
+                if (w)
                     this._animated[w.get_id()] = actor.opacity < 255 || actor.scale_x < 1;
                 return GLib.SOURCE_REMOVE;
             });
@@ -44,21 +48,17 @@ export default class DesktopsTest extends Extension {
     }
 
     _poll() {
-        const [id, cmd, arg] = read('cmd').trim().split(' ');
+        const [id, cmd, ...args] = read('cmd').trim().split(' ');
         if (id && !this._done.has(id)) {
             this._done.add(id);
-            let answer = 'ok';
-            try {
-                answer = this._run(cmd, arg) ?? 'ok';
-            } catch (e) {
-                answer = `error ${e}`;
-            }
-            write(`ack-${id}`, answer);
+            Promise.resolve().then(() => this._run(cmd, ...args))
+                .then(answer => write(`ack-${id}`, answer ?? 'ok'), e => write(`ack-${id}`, `error ${e}`));
         }
         return GLib.SOURCE_CONTINUE;
     }
 
-    _run(cmd, arg) {
+    _run(cmd, ...args) {
+        const arg = args[0];
         const time = global.get_current_time();
         switch (cmd) {
         case 'desk':
@@ -70,10 +70,31 @@ export default class DesktopsTest extends Extension {
         case 'uncover':
             windows().find(w => w.get_title() === 'cover')?.delete(time);
             return;
+        case 'minimize':
+            firefox().minimize();
+            return;
+        case 'unminimize':
+            firefox().unminimize();
+            firefox().activate(time);
+            return;
+        case 'place': {
+            const [x, y, width, height] = args.map(Number);
+            const w = windows().find(isPip);
+            w.move_resize_frame(true, x, y, width, height);
+            // Firefox takes a moment to agree on the size. Then, what a drag ends with:
+            return new Promise(resolve => GLib.timeout_add(GLib.PRIORITY_DEFAULT, 400, () => {
+                Main.extensionManager.lookup('pip-everywhere@aimanelahssini').stateObj._remember(w);
+                const r = w.get_frame_rect();
+                resolve(`${r.x} ${r.y} ${r.width} ${r.height}`);
+                return GLib.SOURCE_REMOVE;
+            }));
+        }
         case 'info':
-            return JSON.stringify(windows().filter(isPip).map(w => ({
-                sticky: w.is_on_all_workspaces(), above: w.is_above(), animated: this._animated[w.get_id()] ?? null,
-            })));
+            return JSON.stringify(windows().filter(isPip).map(w => {
+                const {x, y, width, height} = w.get_frame_rect();
+                return {sticky: w.is_on_all_workspaces(), above: w.is_above(), animated: this._animated[w.get_id()] ?? null,
+                    x, y, width, height};
+            }));
         }
         throw new Error(`unknown command ${cmd}`);
     }

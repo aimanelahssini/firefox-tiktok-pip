@@ -47,7 +47,7 @@ dconf dump / > "$T/dconf-before.txt"
 env -u WAYLAND_DISPLAY -u DISPLAY -u DBUS_SESSION_BUS_ADDRESS \
     HOME="$T/home" XDG_CONFIG_HOME="$T/config" XDG_DATA_HOME="$T/data" XDG_STATE_HOME="$T/state" \
     XDG_CACHE_HOME="$T/cache" XDG_RUNTIME_DIR="$T/rt" GSETTINGS_BACKEND=keyfile \
-    TT_OUT="$T/out" TT_FIREFOX="$FIREFOX" TT_COVER="$HERE/cover.js" \
+    TT_OUT="$T/out" TT_FIREFOX="$FIREFOX" TT_COVER="$HERE/cover.js" DEBUG="$DEBUG" \
     dbus-run-session -- timeout 150 gnome-shell --headless --wayland --virtual-monitor 1280x800 \
     > "$T/shell.log" 2>&1 &
 SHELL_PID=$!
@@ -63,4 +63,6 @@ if diff "$T/dconf-before.txt" "$T/dconf-after.txt" | grep -qiE 'enabled-extensio
     status=1
 fi
 grep -E 'JS ERROR|desktops-test' "$T/shell.log" | head -5 || true
+[ -n "$DEBUG" ] && grep -E 'pip-everywhere|desktops-test' "$T/shell.log" | head -20
+true
 exit $status

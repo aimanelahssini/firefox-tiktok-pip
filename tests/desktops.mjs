@@ -41,18 +41,49 @@ try {
     await sleep(1000);
     check('no PiP while you watch', (await pips()).length === 0);
 
-    await shell('desk 1');
-    check('another desktop: TikTok goes to PiP', await until(async () => (await pips()).length === 1, HIDE_MS));
+    const withPipEverywhere = !!process.env.WITH_PIP_EVERYWHERE;
+    // With PiP Everywhere, GNOME Shell tells Firefox at once; without it, Firefox hears 2-4 s late.
+    const FAST_MS = 1500;
+    const timed = async (cmd, want) => {
+        await shell(cmd);
+        const t0 = Date.now();
+        const ok = await until(async () => (await pips()).length === want, HIDE_MS);
+        return ok ? Date.now() - t0 : null;
+    };
+
+    let ms = await timed('desk 1', 1);
+    check('another desktop: TikTok goes to PiP', ms !== null, `${ms} ms`);
+    if (withPipEverywhere)
+        check('…at once (PiP Everywhere tells Firefox)', ms !== null && ms < FAST_MS, `${ms} ms`);
     check('…still playing', await playing());
     await sleep(500);
-    const info = JSON.parse(await shell('info'));
-    if (process.env.WITH_PIP_EVERYWHERE)
+    let info = JSON.parse(await shell('info'));
+    if (withPipEverywhere)
         check('PiP Everywhere: on top, on every desktop, no zoom-in', info.length === 1 && info[0].sticky && info[0].above
-            && info[0].animated === false, JSON.stringify(info));
+            && info[0].animated !== true, JSON.stringify(info));
 
-    await shell('desk 0');
-    check('back on its desktop: PiP closes', await until(async () => (await pips()).length === 0, 3000));
+    // You put it somewhere: it comes back there next time (Firefox keeps the video's shape, so the
+    // size is what it agreed to)
+    let placed = null;
+    if (withPipEverywhere)
+        placed = (await shell('place 900 80 270 480')).split(' ').map(Number);
+    ms = await timed('desk 0', 0);
+    check('back on its desktop: PiP closes', ms !== null, `${ms} ms`);
     check('…still playing in the page', await playing());
+
+    await sleep(1000);
+    ms = await timed('minimize', 1);
+    check('Firefox minimized: PiP', ms !== null, `${ms} ms`);
+    if (withPipEverywhere) {
+        check('…at once', ms !== null && ms < FAST_MS, `${ms} ms`);
+        await sleep(500);
+        info = JSON.parse(await shell('info'));
+        const near = (a, b) => Math.abs(a - b) <= 2;
+        check('PiP comes back where you put it, same size', info.length === 1 && info[0].x === 900 && info[0].y === 80
+            && near(info[0].width, placed[2]) && near(info[0].height, placed[3]), JSON.stringify([placed, info]));
+    }
+    ms = await timed('unminimize', 0);
+    check('Firefox back: PiP closes', ms !== null, `${ms} ms`);
 
     await sleep(1000);
     await shell('cover');

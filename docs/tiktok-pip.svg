@@ -9,11 +9,11 @@
   </defs>
   <rect width="780" height="340" rx="18" fill="#2b2a33"/>
   <g font-size="15" fill="#e8e6e3" text-anchor="middle" font-weight="bold">
-    <text x="130" y="40">1. Leave TikTok</text><text x="390" y="40">2. ↑ ↓ for the next one</text><text x="650" y="40">3. Back on TikTok</text>
+    <text x="130" y="40">1. Leave TikTok</text><text x="390" y="40">2. Swipe or ↑ ↓ for the next one</text><text x="650" y="40">3. Back on TikTok</text>
   </g>
   <g font-size="12.5" fill="#a9a7a4" text-anchor="middle">
     <text x="130" y="306">Another tab, another desktop,</text><text x="130" y="324">minimized or covered: PiP</text>
-    <text x="390" y="306">Click it, then ↑ / ↓, or the</text><text x="390" y="324">buttons. The same window stays</text>
+    <text x="390" y="306">↑ / ↓, a two-finger swipe or the</text><text x="390" y="324">buttons. The same window stays</text>
     <text x="650" y="306">The PiP closes and the video</text><text x="650" y="324">goes on in the page</text>
   </g>
 
@@ -25,12 +25,14 @@
   <g fill="#c0bfbc"><rect x="46" y="108" width="150" height="8" rx="4"/><rect x="46" y="124" width="120" height="8" rx="4"/><rect x="46" y="140" width="136" height="8" rx="4"/><rect x="46" y="156" width="96" height="8" rx="4"/></g>
   <rect x="160" y="150" width="62" height="110" rx="8" fill="url(#v1)" stroke="#ff5e7e" stroke-width="2.5"/>
   <circle cx="191" cy="190" r="12" fill="#fff" opacity="0.85"/><path d="M186 183v14l11-7z" fill="#c64600"/>
+  <rect x="162" y="254" width="58" height="3" fill="#fff" opacity="0.35"/><rect x="162" y="254" width="24" height="3" fill="#fe2c55"/>
 
   <!-- 2: the PiP up close, with ▲ ▼ -->
   <rect x="282" y="58" width="216" height="220" rx="12" fill="#3a3842"/>
   <rect x="340" y="68" width="100" height="200" rx="10" fill="url(#v2)" stroke="#ff5e7e" stroke-width="2.5"/>
   <circle cx="390" cy="160" r="16" fill="#fff" opacity="0.85"/><path d="M384 151v18l14-9z" fill="#1a5fb4"/>
   <use href="#arrows" x="424" y="168"/>
+  <rect x="343" y="261" width="94" height="4" fill="#fff" opacity="0.35"/><rect x="343" y="261" width="58" height="4" fill="#fe2c55"/>
   <g fill="#e8e6e3" font-size="12" text-anchor="middle">
     <rect x="300" y="138" width="26" height="24" rx="5" fill="#5e5c64"/><text x="313" y="155">↑</text>
     <rect x="300" y="168" width="26" height="24" rx="5" fill="#5e5c64"/><text x="313" y="185">↓</text>
